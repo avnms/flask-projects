@@ -1,0 +1,47 @@
+version: '3'
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+  
+  celery:
+    build: .
+    command: celery -A tasks worker --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+  
+  flower:
+    build: .
+    command: celery -A tasks flower --port=5555
+    ports:
+      - "5555:5555"
+    volumes:
+      - .:/app
+    depends_on:
+      - celery
+      - redis
+  
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+  
+  db:
+    image: postgres
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
